@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<title>pz-MQTT Stable Test</title>
+<style>
+body{font-family:Arial;margin:20px}
+input,button{padding:8px;margin:5px}
+#log{background:#111;color:#0f0;padding:10px;height:220px;overflow:auto}
+</style>
+</head>
+<body>
+
+<h2>pz-MQTT — Локальний тест (Stable)</h2>
+
+<label>Broker URL:</label><br>
+<input id="broker" value="ws://localhost:9001"><br>
+
+<label>Client ID:</label><br>
+<input id="clientId" value="web-client"><br>
+
+<label>Topic:</label><br>
+<input id="topic" value="test/pz-mqtt"><br>
+
+<label>Message:</label><br>
+<input id="message" value="Hello from Docker"><br>
+
+<br>
+<button onclick="connect()">Connect</button>
+<button onclick="disconnect()">Disconnect</button>
+<button onclick="subscribe()">Subscribe</button>
+<button onclick="publish()">Publish</button>
+
+<h3>Log</h3>
+<div id="log">Ready.</div>
+
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<script>
+
+let client = null
+
+function log(msg){
+  const l=document.getElementById("log")
+  l.innerHTML += "<br>"+msg
+  l.scrollTop=l.scrollHeight
+}
+
+function connect(){
+  if(client){
+    log("Already connected")
+    return
+  }
+
+  const broker=document.getElementById("broker").value
+  const id=document.getElementById("clientId").value + "_" + Date.now()
+
+  log("Connecting to " + broker)
+
+  client = mqtt.connect(broker,{
+    clientId:id,
+    reconnectPeriod:2000,
+    clean:true
+  })
+
+  client.on("connect",()=>{
+    log("Connected as " + id)
+  })
+
+  client.on("reconnect",()=>{
+    log("Reconnecting...")
+  })
+
+  client.on("error",(e)=>{
+    log("Error: " + e.message)
+  })
+
+  client.on("close",()=>{
+    log("Connection closed")
+    client=null
+  })
+
+  client.on("message",(topic,message)=>{
+    log("RECEIVED ["+topic+"]: " + message.toString())
+  })
+}
+
+function disconnect(){
+  if(!client){
+    log("Not connected")
+    return
+  }
+  client.end()
+}
+
+function subscribe(){
+  if(!client){
+    log("Not connected")
+    return
+  }
+  const topic=document.getElementById("topic").value
+  client.subscribe(topic,(err)=>{
+    if(err){
+      log("Subscribe error: " + err.message)
+    }else{
+      log("Subscribed to " + topic)
+    }
+  })
+}
+
+function publish(){
+  if(!client){
+    log("Not connected")
+    return
+  }
+  const topic=document.getElementById("topic").value
+  const msg=document.getElementById("message").value
+
+  client.publish(topic,msg,(err)=>{
+    if(err){
+      log("Publish error: " + err.message)
+    }else{
+      log("Published: " + msg)
+    }
+  })
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,34 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+rule_files:
+  - "alerts.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - "alertmanager:9093"
+
+scrape_configs:
+
+  # 🖥 ХОСТ (CPU, RAM)
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # 📦 КОНТЕЙНЕРИ
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+
+  # 🚨 САМИЙ ВАЖЛИВИЙ (перевірка доступності)
+  - job_name: 'services'
+    static_configs:
+      - targets:
+          - 'mqtt-broker:1883'
+          - 'emqx:1883'
+          - 'grafana:3000'
+          - 'prometheus:9090'
+          - 'alertmanager:9093'

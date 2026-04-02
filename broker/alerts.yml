@@ -1,0 +1,50 @@
+groups:
+  - name: container-alerts
+    rules:
+
+      # ❌ КОНТЕЙНЕР ВПАВ
+      - alert: ContainerDown
+        expr: time() - container_last_seen{name!=""} > 30
+        for: 10s
+        labels:
+          severity: critical
+        annotations:
+          summary: "❌ Контейнер ВПАВ"
+          description: |
+            Контейнер: {{ $labels.name }}
+            Порт: {{ $labels.container_label_com_docker_compose_service }}
+            Проблема: контейнер не відповідає
+
+      # ⚠️ ВИСОКЕ CPU (ХОСТ)
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance)(rate(node_cpu_seconds_total{mode="idle"}[1m])) * 100) > 10
+        for: 15s
+        labels:
+          severity: warning
+        annotations:
+          summary: "⚠️ Високе навантаження CPU"
+          description: |
+            Хост: {{ $labels.instance }}
+            CPU: {{ $value }}%
+
+      # 🔥 CPU КОНТЕЙНЕРА
+      - alert: ContainerCPUHigh
+        expr: rate(container_cpu_usage_seconds_total{name!=""}[1m]) * 100 > 20
+        for: 15s
+        labels:
+          severity: warning
+        annotations:
+          summary: "🔥 Контейнер грузить CPU"
+          description: |
+            Контейнер: {{ $labels.name }}
+            CPU: {{ $value }}%
+
+      # 🧪 ТЕСТ
+      - alert: TestAlert
+        expr: vector(1)
+        for: 10s
+        labels:
+          severity: info
+        annotations:
+          summary: "✅ Все працює"
+          description: "Telegram інтеграція ок"
